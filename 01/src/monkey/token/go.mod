@@ -1,3 +1,3 @@
-module example.com/token
+module local.packages/token
 
 go 1.16
