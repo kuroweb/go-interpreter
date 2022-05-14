@@ -58,12 +58,14 @@ var keywords = map[string]TokenType{
 	"return": RETURN,
 }
 
+// トークンタイプを判別して返却する関数
 func LookupIdent(ident string) TokenType {
-	// キーワードと一致する場合 => 一致するキーワードを返却
+	// keywords: 定義済みキーワード (fn, let, true, false, if... )
+	// 定義済みキーワードに含まれる場合は、定期済みのトークンタイプを返却
 	if tok, ok := keywords[ident]; ok {
 		return tok
 	}
 
-	// キーワードと一致しない場合 => IDENTを返却
+	// 定義済みキーワードと一致しない場合 => 識別子を表すトークンタイプを返却
 	return IDENT
 }
