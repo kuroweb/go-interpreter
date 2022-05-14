@@ -59,8 +59,11 @@ var keywords = map[string]TokenType{
 }
 
 func LookupIdent(ident string) TokenType {
+	// キーワードと一致する場合 => 一致するキーワードを返却
 	if tok, ok := keywords[ident]; ok {
 		return tok
 	}
+
+	// キーワードと一致しない場合 => IDENTを返却
 	return IDENT
 }

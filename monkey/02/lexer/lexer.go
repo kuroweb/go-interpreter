@@ -100,9 +100,11 @@ func (l *Lexer) peekChar() byte {
 
 func(l *Lexer) readIdentifier() string {
 	position := l.position
+	// for文で繰り返し。識別子を読み込む
 	for isLetter(l.ch) {
 		l.readChar()
 	}
+	// sliceで識別子の文字列を取得して返却
 	return l.input[position:l.position]
 }
 
