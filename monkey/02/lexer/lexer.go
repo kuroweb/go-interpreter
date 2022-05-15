@@ -1,13 +1,8 @@
-package lexer
+package lexer // 字句解析機
 
 import (
 	"github.com/kuromitsu0104/go-interpreter/monkey/02/token"
 )
-
-// MEMO:
-//	- lexerとは「字句解析機」のこと
-//	-	input: 	ソースコードとなる文字列
-//  -	output: ソースコードを表現するトークンを返却
 
 type Lexer struct {
 	input        string
@@ -84,7 +79,7 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	}
 
-	l.readChar() // 検査中の文字列とポジションを更新
+	l.readChar() // 検査中の文字列とポジションを更新してポインタを進める
 	return tok // 検査中した文字列に対応するトークンを返却
 }
 

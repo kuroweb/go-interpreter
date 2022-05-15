@@ -1,4 +1,4 @@
-package ast
+package ast // 抽象構文木. プログラミング言語のソースコードの構造をツリーとして表現したもの
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 )
 
 type Node interface {
-	TokenLiteral() string
+	TokenLiteral() string // トークンのリテラル値を返却
 	String() string
 }
 

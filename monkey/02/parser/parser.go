@@ -1,4 +1,4 @@
-package parser
+package parser // 構文解析器
 
 import (
 	"fmt"
@@ -21,11 +21,11 @@ const (
 )
 
 type Parser struct {
-	l      *lexer.Lexer
-	errors []string
+	l      *lexer.Lexer // 字句解析機インスタンス
+	errors []string // エラーメッセージを格納するフィールド
 
-	curToken  token.Token //
-	peekToken token.Token // 
+	curToken  token.Token // 現在解析中のトークン
+	peekToken token.Token // これから解析するトークン(現在のトークンの次)
 
 	prefixParseFns map[token.TokenType]prefixParseFn
 	infixParseFns  map[token.TokenType]infixParseFn
@@ -36,11 +36,12 @@ type (
 	infixParseFn  func(ast.Expression) ast.Expression
 )
 
+
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
 		l:      l,
 		errors: []string{},
-	}
+	} // Parser構造体を初期化
 
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
@@ -55,16 +56,18 @@ func New(l *lexer.Lexer) *Parser {
 	return p
 }
 
+// 解析中のトークン、次に解析するトークンのポインタを進める
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
 	p.peekToken = p.l.NextToken()
 }
 
+// 構文解析器のメインプログラム
 func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{}
-	program.Statements = []ast.Statement{}
+	program.Statements = []ast.Statement{} // Statementsフィールドを初期化
 
-	for p.curToken.Type != token.EOF {
+	for p.curToken.Type != token.EOF { // 文末になるまでポインタを進めながらASTを構築
 		stmt := p.parseStatement()
 		if stmt != nil {
 			program.Statements = append(program.Statements, stmt)
@@ -75,6 +78,7 @@ func (p *Parser) ParseProgram() *ast.Program {
 	return program
 }
 
+// 解析中のトークンに対応するASTを返却
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 	case token.LET:
@@ -86,6 +90,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	}
 }
 
+// LETトークンのASTを初期化して返却
 func (p *Parser) parseLetStatement() *ast.LetStatement {
 	stmt := &ast.LetStatement{Token: p.curToken}
 
@@ -99,7 +104,7 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	// TODO: セミコロンに遭遇するまで式を読み飛ばしてしまっている
+	// 解析中のトークンがセミコロンになるまでポインタを進める
 	for !p.curTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
@@ -107,14 +112,19 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	return stmt
 }
 
+// curToken.Typeのトークンタイプをチェック
 func (p *Parser) curTokenIs(t token.TokenType) bool {
 	return p.curToken.Type == t
 }
 
+// peekToken.Typeのトークンタイプをチェック
 func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
 }
 
+// 次に解析するトークンのトークンタイプをチェックして true / false を返却
+// 期待通りのトークンタイプの場合 -> true
+// 想定外のトークンタイプの場合 -> false && errorコードを格納
 func (p *Parser) expectPeek(t token.TokenType) bool {
 	if p.peekTokenIs(t) {
 		p.nextToken()
