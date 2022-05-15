@@ -9,6 +9,7 @@ import (
 	"github.com/kuromitsu0104/go-interpreter/monkey/02/token"
 )
 
+// 優先度?
 const (
 	_ int = iota
 	LOWEST
@@ -166,6 +167,7 @@ func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
 	p.infixParseFns[tokenType] = fn
 }
 
+// ExpresstionStatement ASTノードを生成
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 
@@ -179,11 +181,12 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
-	prefix := p.prefixParseFns[p.curToken.Type]
+	prefix := p.prefixParseFns[p.curToken.Type] // prefixのトークンタイプに対応するparser関数を取得
 	if prefix == nil {
+		p.noPrefixParseFnError(p.curToken.Type)
 		return nil
 	}
-	leftExp := prefix()
+	leftExp := prefix() // prefixの右側にあるトークンをparser関数で検証
 
 	return leftExp
 }
@@ -207,6 +210,8 @@ func(p *Parser) parseIntegerLiteral() ast.Expression {
 	return lit
 }
 
+// token.BANG, token.MINUSのときに呼ばれるメソッド
+// 次のトークンを読み込みんで、expression.RightにASTノードを格納する
 func(p *Parser) parsePrefixExpression() ast.Expression {
 	expression := &ast.PrefixExpression{
 		Token: p.curToken,
@@ -218,4 +223,9 @@ func(p *Parser) parsePrefixExpression() ast.Expression {
 	expression.Right = p.parseExpression(PREFIX)
 
 	return expression
+}
+
+func (p *Parser) noPrefixParseFnError(t token.TokenType) {
+	msg := fmt.Sprintf("no prefix parse function for %s found", t)
+	p.errors = append(p.errors, msg)
 }
