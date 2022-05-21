@@ -196,9 +196,9 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		p.noPrefixParseFnError(p.curToken.Type)
 		return nil
 	}
-	leftExp := prefix() // prefixの右側にあるトークンをparser関数で検証
+	leftExp := prefix() // prefixのASTノードを生成
 
-	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
+	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() { // precedence < p.peekPreceden() 優先度を判別？？
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
 			return leftExp
@@ -263,7 +263,7 @@ var precedences = map[token.TokenType]int{
 }
 
 func (p *Parser) peekPrecedence() int {
-	if p, ok := precedences[p.peekToken.Type]; ok {
+	if p, ok := precedences[p.peekToken.Type]; ok { // 次のトークンのトークンタイプに一致する優先度を返却
 		return p
 	}
 
@@ -278,6 +278,13 @@ func (p *Parser) curPrecedence() int {
 	return LOWEST
 }
 
+// 中置演算子
+// {
+// 	Token: 現在のトークン,
+// 	Operator: 現在のトークンのリテラル値,
+// 	Left: 左側のASTノード,
+// 	Right: 右側のASTノード,
+// }
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	expression := &ast.InfixExpression{
 		Token: p.curToken,
