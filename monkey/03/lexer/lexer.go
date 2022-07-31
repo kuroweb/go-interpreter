@@ -1,7 +1,7 @@
 package lexer // 字句解析機
 
 import (
-	"github.com/kuromitsu0104/go-interpreter/monkey/02/token"
+	"github.com/kuromitsu0104/go-interpreter/monkey/03/token"
 )
 
 type Lexer struct {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kuromitsu0104/go-interpreter/monkey/02/ast"
-	"github.com/kuromitsu0104/go-interpreter/monkey/02/lexer"
+	"github.com/kuromitsu0104/go-interpreter/monkey/03/ast"
+	"github.com/kuromitsu0104/go-interpreter/monkey/03/lexer"
 )
 
 func TestReturnStatements(t *testing.T) {
