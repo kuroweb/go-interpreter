@@ -10,7 +10,6 @@ func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
 		// Program型のときに実行. Programが持つStatements単位での評価を evalStatements関数 で実行
-		// return evalStatements(node.Statements)
 		return evalProgram(node)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
@@ -26,7 +25,6 @@ func Eval(node ast.Node) object.Object {
 		right := Eval(node.Right)
 		return evalInfixExpression(node.Operator, left, right)
 	case *ast.BlockStatement:
-		// return evalStatements(node.Statements)
 		return evalBlockStatement(node)
 	case *ast.IfExpression:
 		return evalIfExpression(node)
@@ -37,23 +35,6 @@ func Eval(node ast.Node) object.Object {
 	}
 
 	return nil
-}
-
-// Programが持つStatementsをそれぞれ評価する関数
-func evalStatements(stmts []ast.Statement) object.Object {
-	var result object.Object
-
-	for _, statement := range stmts {
-		// Statementごとに評価関数を実行
-		result = Eval(statement)
-
-		// 評価したStatementが ReturnStatement型 のときは、後続のStatementsの評価をスキップ
-		if returnValue, ok := result.(*object.ReturnValue); ok {
-			return returnValue.Value
-		}
-	}
-
-	return result
 }
 
 var (
