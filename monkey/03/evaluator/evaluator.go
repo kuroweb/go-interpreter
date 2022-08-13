@@ -1,6 +1,8 @@
 package evaluator
 
 import (
+	"fmt"
+
 	"github.com/kuromitsu0104/go-interpreter/monkey/03/ast"
 	"github.com/kuromitsu0104/go-interpreter/monkey/03/object"
 )
@@ -19,10 +21,20 @@ func Eval(node ast.Node) object.Object {
 		return nativeBoolToBooleanObject(node.Value)
 	case *ast.PrefixExpression:
 		right := Eval(node.Right)
+		if isError(right) {
+			return right
+		}
 		return evalPrefixExpression(node.Operator, right)
 	case *ast.InfixExpression:
 		left := Eval(node.Left)
+		if isError(left) {
+			return left
+		}
+
 		right := Eval(node.Right)
+		if isError(right) {
+			return right
+		}
 		return evalInfixExpression(node.Operator, left, right)
 	case *ast.BlockStatement:
 		return evalBlockStatement(node)
@@ -31,6 +43,9 @@ func Eval(node ast.Node) object.Object {
 	case *ast.ReturnStatement:
 		// ReturnStatement型のときは、object.ReturnValueでラップした値を返却
 		val := Eval(node.ReturnValue)
+		if isError(val) {
+			return val
+		}
 		return &object.ReturnValue{Value: val}
 	}
 
@@ -58,7 +73,7 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 	case "-":
 		return evalMinusPrefixOperatorExpresison(right)
 	default:
-		return NULL
+		return newError("unknown operator: %s%s", operator, right.Type())
 	}
 }
 
@@ -77,7 +92,7 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 
 func evalMinusPrefixOperatorExpresison(right object.Object) object.Object {
 	if right.Type() != object.INTEGER_OBJ {
-		return NULL
+		return newError("unknown operator: -%s", right.Type())
 	}
 
 	value := right.(*object.Integer).Value
@@ -95,8 +110,12 @@ func evalInfixExpression(
 		return nativeBoolToBooleanObject(left == right)
 	case operator == "!=":
 		return nativeBoolToBooleanObject(left != right)
+	case left.Type() != right.Type():
+		return newError("type mismatch: %s %s %s",
+			left.Type(), operator, right.Type())
 	default:
-		return NULL
+		return newError("unknown operator: %s %s %s",
+			left.Type(), operator, right.Type())
 	}
 }
 
@@ -125,12 +144,16 @@ func evalIntegerInfixExpression(
 	case "!=":
 		return nativeBoolToBooleanObject(leftVal != rightVal)
 	default:
-		return NULL
+		return newError("unknown oeprator: %s %s %s",
+			left.Type(), operator, right.Type())
 	}
 }
 
 func evalIfExpression(ie *ast.IfExpression) object.Object {
 	condition := Eval(ie.Condition)
+	if isError(condition) {
+		return condition
+	}
 
 	if isTruthy(condition) {
 		return Eval(ie.Consequence)
@@ -162,9 +185,13 @@ func evalProgram(program *ast.Program) object.Object {
 	for _, statement := range program.Statements {
 		result = Eval(statement)
 
-		// object.ReturnValueが返却されたとき、後続のStatementsの評価をスキップする.
-		if returnValue, ok := result.(*object.ReturnValue); ok {
-			return returnValue.Value
+		switch result := result.(type) {
+		case *object.ReturnValue:
+			// object.ReturnValueが返却されたとき、後続のStatementsの評価をスキップする.
+			return result.Value
+		case *object.Error:
+			// object.Errorが返却されたとき、後続のStatementsの評価をスキップする.
+			return result
 		}
 	}
 
@@ -173,8 +200,6 @@ func evalProgram(program *ast.Program) object.Object {
 
 // BlockStatement型を評価するための関数.
 // NOTE: Program型と分離して、Blockの評価に特化させたもの.
-// ブロック内に return が存在していても、後続の処理を継続する.
-// (evalProgmramでは、トップレベルでobject.ReturnValueが返却されると後続のStatementsの評価をスキップする)
 func evalBlockStatement(block *ast.BlockStatement) object.Object {
 	var result object.Object
 
@@ -182,11 +207,27 @@ func evalBlockStatement(block *ast.BlockStatement) object.Object {
 	for _, statement := range block.Statements {
 		result = Eval(statement)
 
-		// 
-		if result != nil && result.Type() == object.RETURN_VALUE_OBJ {
-			return result
+		if result != nil {
+			rt := result.Type()
+			// ブロック内に return が存在していても後続の処理を継続する.
+			// (evalProgramでは、トップレベルでobject.ReturnValueが返却されると後続のStatementsの評価をスキップする)
+			if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ {
+				return result
+			}
 		}
 	}
 
 	return result
+}
+
+func newError(format string, a ...interface{}) *object.Error {
+	return &object.Error{Message: fmt.Sprintf(format, a...)}
+}
+
+// 評価結果がエラーであるのかチェックする関数
+func isError(obj object.Object) bool {
+	if obj != nil {
+		return obj.Type() == object.ERROR_OBJ
+	}
+	return false
 }
