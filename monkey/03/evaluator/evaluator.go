@@ -10,8 +10,8 @@ func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
 		// Program型のときに実行. Programが持つStatements単位での評価を evalStatements関数 で実行
-		return evalStatements(node.Statements)
-		// return evalProgram(node)
+		// return evalStatements(node.Statements)
+		return evalProgram(node)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
 	case *ast.IntegerLiteral:
@@ -26,7 +26,8 @@ func Eval(node ast.Node) object.Object {
 		right := Eval(node.Right)
 		return evalInfixExpression(node.Operator, left, right)
 	case *ast.BlockStatement:
-		return evalStatements(node.Statements)
+		// return evalStatements(node.Statements)
+		return evalBlockStatement(node)
 	case *ast.IfExpression:
 		return evalIfExpression(node)
 	case *ast.ReturnStatement:
@@ -172,14 +173,37 @@ func isTruthy(obj object.Object) bool {
 	}
 }
 
+// Program型を評価するための関数.
 func evalProgram(program *ast.Program) object.Object {
 	var result object.Object
 
+	// Programが持つStatements単位でStatementの評価を行う.
 	for _, statement := range program.Statements {
 		result = Eval(statement)
 
+		// object.ReturnValueが返却されたとき、後続のStatementsの評価をスキップする.
 		if returnValue, ok := result.(*object.ReturnValue); ok {
 			return returnValue.Value
+		}
+	}
+
+	return result
+}
+
+// BlockStatement型を評価するための関数.
+// NOTE: Program型と分離して、Blockの評価に特化させたもの.
+// ブロック内に return が存在していても、後続の処理を継続する.
+// (evalProgmramでは、トップレベルでobject.ReturnValueが返却されると後続のStatementsの評価をスキップする)
+func evalBlockStatement(block *ast.BlockStatement) object.Object {
+	var result object.Object
+
+	// BlockStatementが持つStatements単位でStatementの評価を行う.
+	for _, statement := range block.Statements {
+		result = Eval(statement)
+
+		// 
+		if result != nil && result.Type() == object.RETURN_VALUE_OBJ {
+			return result
 		}
 	}
 
