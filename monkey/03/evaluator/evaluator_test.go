@@ -36,11 +36,13 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}
 }
 
+// evaluator.Evalメソッドを呼び出す
 func testEval(input string) object.Object {
 	l := lexer.New(input)
 	p := parser.New(l)
+	// 構文解析器でASTを構築
 	program := p.ParseProgram()
-
+	// ASTをevaluatorで評価
 	return Eval(program)
 }
 
@@ -155,4 +157,32 @@ func testNullObject(t *testing.T, obj object.Object) bool {
 		return false
 	}
 	return true
+}
+
+// Returnの動作テスト
+func TestReturnStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"return 10;", 10},
+		{"return 10; 9;", 10},
+		{"return 2 * 5; 9;", 10},
+		{"9; return 2 * 5; 9;", 10},
+		{`
+			if (10 > 1) {
+				if (10 > 1) {
+					return 10;
+				}
+
+				return 1;
+			}
+		`, 10},
+	}
+
+	for _, tt := range tests {
+		// テストデータを読ませてテストコードを実行
+		evaluated := testEval(tt.input)
+		testIntegerObject(t, evaluated, tt.expected)
+	}
 }

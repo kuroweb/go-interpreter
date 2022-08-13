@@ -6,9 +6,12 @@ import (
 )
 
 func Eval(node ast.Node) object.Object {
+	// データ型に合わせて処理を分岐
 	switch node := node.(type) {
 	case *ast.Program:
+		// Program型のときに実行. Programが持つStatements単位での評価を evalStatements関数 で実行
 		return evalStatements(node.Statements)
+		// return evalProgram(node)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
 	case *ast.IntegerLiteral:
@@ -26,16 +29,27 @@ func Eval(node ast.Node) object.Object {
 		return evalStatements(node.Statements)
 	case *ast.IfExpression:
 		return evalIfExpression(node)
+	case *ast.ReturnStatement:
+		// ReturnStatement型のときは、object.ReturnValueでラップした値を返却
+		val := Eval(node.ReturnValue)
+		return &object.ReturnValue{Value: val}
 	}
 
 	return nil
 }
 
+// Programが持つStatementsをそれぞれ評価する関数
 func evalStatements(stmts []ast.Statement) object.Object {
 	var result object.Object
 
 	for _, statement := range stmts {
+		// Statementごとに評価関数を実行
 		result = Eval(statement)
+
+		// 評価したStatementが ReturnStatement型 のときは、後続のStatementsの評価をスキップ
+		if returnValue, ok := result.(*object.ReturnValue); ok {
+			return returnValue.Value
+		}
 	}
 
 	return result
@@ -156,4 +170,18 @@ func isTruthy(obj object.Object) bool {
 	default:
 		return true
 	}
+}
+
+func evalProgram(program *ast.Program) object.Object {
+	var result object.Object
+
+	for _, statement := range program.Statements {
+		result = Eval(statement)
+
+		if returnValue, ok := result.(*object.ReturnValue); ok {
+			return returnValue.Value
+		}
+	}
+
+	return result
 }
