@@ -73,6 +73,7 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 	case "-":
 		return evalMinusPrefixOperatorExpresison(right)
 	default:
+		// エラーオブジェクトを返却
 		return newError("unknown operator: %s%s", operator, right.Type())
 	}
 }
@@ -92,6 +93,7 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 
 func evalMinusPrefixOperatorExpresison(right object.Object) object.Object {
 	if right.Type() != object.INTEGER_OBJ {
+		// エラーオブジェクトを返却
 		return newError("unknown operator: -%s", right.Type())
 	}
 
@@ -111,9 +113,11 @@ func evalInfixExpression(
 	case operator == "!=":
 		return nativeBoolToBooleanObject(left != right)
 	case left.Type() != right.Type():
+		// エラーオブジェクトを返却
 		return newError("type mismatch: %s %s %s",
 			left.Type(), operator, right.Type())
 	default:
+		// エラーオブジェクトを返却
 		return newError("unknown operator: %s %s %s",
 			left.Type(), operator, right.Type())
 	}
@@ -144,6 +148,7 @@ func evalIntegerInfixExpression(
 	case "!=":
 		return nativeBoolToBooleanObject(leftVal != rightVal)
 	default:
+		// エラーオブジェクトを返却
 		return newError("unknown oeprator: %s %s %s",
 			left.Type(), operator, right.Type())
 	}
@@ -220,6 +225,7 @@ func evalBlockStatement(block *ast.BlockStatement) object.Object {
 	return result
 }
 
+// エラーオブジェクトを返却する関数
 func newError(format string, a ...interface{}) *object.Error {
 	return &object.Error{Message: fmt.Sprintf(format, a...)}
 }
